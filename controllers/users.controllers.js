@@ -35,6 +35,10 @@ export async function LoginUsuario(req, res) {
     if (usuarioeSenha.rowCount === 0) {
       return res.sendStatus(401);
     }
+    await connection.query(
+      'INSERT INTO sessoes("usuarioId", token) VALUES($1,$2);',
+      [usuarioeSenha.rows[0].id, token]
+    );
     res.status(200).send(token);
   } catch (err) {
     res.sendStatus(400);
