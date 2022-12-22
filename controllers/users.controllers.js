@@ -45,4 +45,41 @@ export async function LoginUsuario(req, res) {
   }
 }
 
-export async function historicoUsuarios(req, res) {}
+export async function historicoUsuarios(req, res) {
+  const { authorization } = req.headers;
+  const token = authorization?.replace("Bearer ", "");
+  try {
+    const verificaToken = await connection.query(
+      "SELECT * FROM users WHERE token = $1;",
+      [token]
+    );
+    const infoUsuario = await connection.query(
+      'SELECT * FROM urls WHERE "usuarioId" = $1;',
+      [verificaToken.rows[0].id]
+    );
+    const somaVisitas = await connection.query(
+      'SELECT SUM("visitCount") FROM urls WHERE "usuarioId" = $1;',
+      [verificaToken.rows[0].id]
+    );
+    console.log(somaVisitas);
+    if (verificaToken.rowCount === 0) {
+      return res.sendStatus(404);
+    }
+    res.status(200).send({
+      id: verificaToken.rows[0].id,
+      name: verificaToken.rows[0].name,
+      visitCount: somaVisitas.rows[0].sum,
+      shortenedUrls: infoUsuario.rows.map((e) => {
+        return {
+          id: e.id,
+          shortUrl: e.shortUrl,
+          url: e.url,
+          visitCount: e.visitCount,
+        };
+      }),
+    });
+  } catch (err) {
+    res.sendStatus(400);
+    console.log(err);
+  }
+}
