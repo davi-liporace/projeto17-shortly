@@ -83,3 +83,19 @@ export async function historicoUsuarios(req, res) {
     console.log(err);
   }
 }
+
+export async function rankingUsuarios(req, res) {
+  try {
+    const teste = await connection.query(
+      `SELECT users.id, name, COUNT(urls.url) AS "linksCount",
+     SUM(COALESCE(urls."visitCount",0)) AS "visitCount"
+       FROM users LEFT JOIN urls ON users.id = urls."usuarioId"  GROUP BY users.id
+      ORDER BY "visitCount" DESC LIMIT 10;`
+    );
+    res.status(200).send(teste.rows);
+    console.log(teste);
+  } catch (err) {
+    res.sendStatus(400);
+    console.log(err);
+  }
+}
