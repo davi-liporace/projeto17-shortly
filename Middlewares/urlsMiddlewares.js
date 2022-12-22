@@ -9,7 +9,7 @@ export async function urlsMiddleware(req, res, next) {
     return res.sendStatus(401);
   }
   const findToken = await connection.query(
-    "SELECT * FROM sessoes WHERE token = $1;",
+    "SELECT * FROM users WHERE token = $1;",
     [token]
   );
   if (findToken.rowCount === 0) {

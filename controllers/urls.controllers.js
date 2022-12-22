@@ -8,12 +8,12 @@ export async function encurtaUrl(req, res) {
   try {
     const urlEncurtada = nanoid();
     const RecebeId = await connection.query(
-      'SELECT "usuarioId" FROM sessoes WHERE token = $1;',
+      'SELECT "id" FROM users WHERE token = $1;',
       [token]
     );
     await connection.query(
       'INSERT INTO urls("usuarioId",url, "shortUrl", "visitCount") VALUES ($1,$2,$3,$4);',
-      [RecebeId.rows[0].usuarioId, url, urlEncurtada, 0]
+      [RecebeId.rows[0].id, url, urlEncurtada, 0]
     );
     res.status(201).send({ shortUrl: urlEncurtada });
   } catch (err) {
@@ -59,6 +59,37 @@ export async function UrlShortRoute(req, res) {
       [somaVisita, shortUrl]
     );
     res.redirect(200, selecionaRota.rows[0].url);
+  } catch (err) {
+    res.sendStatus(400);
+    console.log(err);
+  }
+}
+
+export async function deletaUrl(req, res) {
+  const { id } = req.params;
+  const { authorization } = req.headers;
+  const token = authorization?.replace("Bearer ", "");
+  try {
+    const verificaToken = await connection.query(
+      "SELECT * FROM users WHERE token = $1;",
+      [token]
+    );
+    const urlSelecionada = await connection.query(
+      "SELECT * FROM urls WHERE id = $1;",
+      [id]
+    );
+    console.log(urlSelecionada.rows);
+    if (verificaToken.rowCount === 0) {
+      return res.sendStatus(401);
+    }
+    if (urlSelecionada.rowCount === 0) {
+      return res.sendStatus(404);
+    }
+    if (verificaToken.rows[0].id !== urlSelecionada.rows[0].usuarioId) {
+      return res.sendStatus(401);
+    }
+    await connection.query("DELETE FROM urls WHERE id = $1;", [id]);
+    res.sendStatus(204);
   } catch (err) {
     res.sendStatus(400);
     console.log(err);
